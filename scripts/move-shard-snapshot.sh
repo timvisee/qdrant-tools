@@ -4,13 +4,16 @@
 # snapshot transfer.
 #
 # Start first node:
-# $ rm -r storage{,2}; QDRANT__LOG_LEVEL=collection::shards=trace,actix_web=warn,debug QDRANT__CLUSTER__ENABLED=true mold -run cargo run -- --uri http://localhost:6335
+# $ QDRANT__LOG_LEVEL=collection::shards=trace,actix_web=warn,debug QDRANT__CLUSTER__ENABLED=true mold -run cargo run -- --uri http://localhost:6335
 #
 # Start second node:
 # $ QDRANT__LOG_LEVEL=collection::shards=trace,actix_web=warn,debug QDRANT__CLUSTER__ENABLED=true QDRANT__SERVICE__HTTP_PORT=6343 QDRANT__SERVICE__GRPC_PORT=6344 QDRANT__CLUSTER__P2P__PORT=6345 QDRANT__STORAGE__STORAGE_PATH=./storage2 mold -run cargo run -- --bootstrap http://localhost:6335
 #
 # Run test command:
 # $ bfb --collection-name test -n 10000 --indexing-threshold 0 --skip-wait-index && ./move-shard-snapshot.sh
+#
+# Clean up after testing:
+# rm -r storage{,2}
 
 QDRANT_HOST="localhost:6333"
 COLLECTION=test
