@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # On a cluster, move shard from `test` collection to another peer using shard
-# snapshot transfer.
+# snapshot transfer and abort it right after.
 #
 # Start first node:
 # $ QDRANT__LOG_LEVEL=collection::shards=trace,actix_web=warn,debug QDRANT__CLUSTER__ENABLED=true mold -run cargo run -- --uri http://localhost:6335
@@ -22,6 +22,24 @@ CLUSTER=$(curl -L -X GET "http://$QDRANT_HOST/collections/$COLLECTION/cluster" \
   -H 'Content-Type: application/json' \
   --fail -s)
 
+function abort {
+    sleep 3s
+
+    ABORT=$(echo $CLUSTER | jq '{
+        "abort_transfer": {
+            "from_peer_id": .result.peer_id,
+            "shard_id": .result.local_shards[0].shard_id,
+            "to_peer_id": .result.remote_shards[0].peer_id,
+        }
+    }')
+    echo Requesting transfer abort: $ABORT
+
+    curl -X POST "http://$QDRANT_HOST/collections/$COLLECTION/cluster" \
+        -H 'Content-Type: application/json' \
+        --fail -s \
+        --data-raw "$ABORT" | jq
+}
+
 MOVE=$(echo $CLUSTER | jq '{
     "move_shard": {
         "from_peer_id": .result.peer_id,
@@ -36,6 +54,8 @@ curl -X POST "http://$QDRANT_HOST/collections/$COLLECTION/cluster" \
   -H 'Content-Type: application/json' \
   --fail -s \
   --data-raw "$MOVE" | jq
+
+abort &
 
 for i in {1..20};
 do
