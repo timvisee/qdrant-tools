@@ -14,12 +14,14 @@ fi
 ID=$1
 IP=127.0.0.$ID
 
+shift
+
 export QDRANT__CLUSTER__ENABLED=true
 export QDRANT__SERVICE__HOST=$IP
 export QDRANT__STORAGE__STORAGE_PATH=$STORAGE_BASE$ID
 
 if [[ $ID == 1 ]]; then
-    $QDRANT_BIN --uri http://127.0.0.1:6335
+    $QDRANT_BIN --uri http://127.0.0.1:6335 $@
 else
-    $QDRANT_BIN --bootstrap http://127.0.0.1:6335 --uri http://$IP:6335
+    $QDRANT_BIN --bootstrap http://127.0.0.1:6335 --uri http://$IP:6335 $@
 fi
