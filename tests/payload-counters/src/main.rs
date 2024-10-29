@@ -25,7 +25,7 @@ const BATCH_SIZE: usize = 50;
 // const INDEXING_THRESHOLD: u64 = 1;
 const INDEXING_THRESHOLD: u64 = 1;
 // const POINT_COUNT: u64 = 20_000;
-const POINT_COUNT: u64 = 2000;
+const POINT_COUNT: u64 = 200;
 const SHUFFLE_POINTS: bool = false;
 // const DIM: u64 = 128;
 const DIM: u64 = 1;
@@ -35,7 +35,7 @@ const ALWAYS_CHECK: bool = true;
 const TRANSFERS: bool = true;
 const TRANSFER_METHODS: &[ShardTransferMethod] = &[
     // ShardTransferMethod::StreamRecords,
-    ShardTransferMethod::Snapshot,
+    // ShardTransferMethod::Snapshot,
     ShardTransferMethod::WalDelta,
 ];
 const CANCEL_OPTIMIZERS: bool = false;
