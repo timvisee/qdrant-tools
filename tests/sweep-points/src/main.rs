@@ -11,6 +11,7 @@ use qdrant_client::qdrant::{Distance, PointId};
 use qdrant_client::Qdrant;
 use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
+use tokio::sync::Mutex;
 
 const COLLECTION_NAME: &str = "benchmark";
 const SHARD_COUNT: u32 = 1;
@@ -54,8 +55,13 @@ async fn main() {
     delete_collection(&clients[0]).await;
     create_collection(&clients[0]).await;
 
+    let transfer_lock = Arc::new(Mutex::new(()));
+
     if TRANSFERS {
-        tokio::spawn(run_transfers(Arc::clone(&clients)));
+        tokio::spawn(run_transfers(
+            Arc::clone(&clients),
+            Arc::clone(&transfer_lock),
+        ));
     }
 
     if CANCEL_OPTIMIZERS {
@@ -67,7 +73,7 @@ async fn main() {
 
         sweep_points(&clients, sweep_start).await;
 
-        if let Err(err) = check_points(&clients, sweep_start, CHECK_RETRIES).await {
+        if let Err(err) = check_points(&clients, sweep_start, CHECK_RETRIES, &transfer_lock).await {
             panic!("\n!!!INCONSISTENCIES AFTER {CHECK_RETRIES} ATTEMPTS!!!\n{err}\n");
         }
     }
@@ -212,9 +218,15 @@ async fn wait_for_transfer_count(client: &Qdrant, count: usize) {
     panic!("Timeout waiting for transfer count");
 }
 
-async fn check_points(clients: &[Qdrant], sweep_start: u64, attempts: usize) -> Result<(), String> {
+async fn check_points(
+    clients: &[Qdrant],
+    sweep_start: u64,
+    attempts: usize,
+    transfer_lock: &Mutex<()>,
+) -> Result<(), String> {
     let range = sweep_start..sweep_start + POINT_COUNT;
     let mut errors = vec![];
+    let mut transfer_lock_guard = None;
 
     for retries_left in (0..attempts).rev() {
         errors.clear();
@@ -234,6 +246,11 @@ async fn check_points(clients: &[Qdrant], sweep_start: u64, attempts: usize) -> 
         }
 
         println!("Got inconsistencies:\n{}", errors.join("\n"));
+
+        // Block transfers until we are consistent
+        if transfer_lock_guard.is_none() {
+            transfer_lock_guard.replace(transfer_lock.lock().await);
+        }
 
         if retries_left > 0 {
             std::thread::sleep(CHECK_RETRY_DELAY);
@@ -289,7 +306,7 @@ async fn check_points_on_peer(client: &Qdrant, sweep_start: u64) -> Result<(), S
     Ok(())
 }
 
-async fn run_transfers(clients: Arc<Vec<Qdrant>>) {
+async fn run_transfers(clients: Arc<Vec<Qdrant>>, transfer_lock: Arc<Mutex<()>>) {
     if clients.len() < 2 {
         return;
     }
@@ -317,6 +334,9 @@ async fn run_transfers(clients: Arc<Vec<Qdrant>>) {
             .await
             .expect("failed to get collection cluster info")
             .peer_id;
+
+        // Block transfers if we're currently waiting on inconsistency
+        drop(transfer_lock.lock().await);
 
         // Start transfer
         println!("Transfer {from_peer_id}:{shard_id} -> {to_peer_id}:{shard_id} ({method:?})",);
