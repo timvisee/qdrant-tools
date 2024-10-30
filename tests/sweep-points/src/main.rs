@@ -212,7 +212,7 @@ async fn wait_for_transfer_count(client: &Qdrant, count: usize) {
             return;
         }
 
-        std::thread::sleep(COLLECTION_POLL_INTERVAL);
+        tokio::time::sleep(COLLECTION_POLL_INTERVAL).await;
     }
 
     panic!("Timeout waiting for transfer count");
@@ -253,7 +253,7 @@ async fn check_points(
         }
 
         if retries_left > 0 {
-            std::thread::sleep(CHECK_RETRY_DELAY);
+            tokio::time::sleep(CHECK_RETRY_DELAY).await;
         }
     }
 
