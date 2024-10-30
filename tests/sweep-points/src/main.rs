@@ -243,6 +243,13 @@ async fn check_points(client: &Qdrant, sweep_start: u64) -> Result<(), String> {
         .collect();
     ids.sort_unstable();
 
+    if ids.is_empty() {
+        let range = sweep_start..sweep_start + POINT_COUNT;
+        return Err(format!(
+            "expect {range:?}, got zero points (len: 0 vs {POINT_COUNT})"
+        ));
+    }
+
     debug_assert!(
         ids.windows(2).all(|w| w[0] < w[1]),
         "point IDs contain duplicate or are not sorted",
