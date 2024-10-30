@@ -24,7 +24,6 @@ const SHUFFLE_POINTS: bool = false;
 const DIM: u64 = 128;
 const PAYLOAD_KEY: &str = "key";
 const WAIT: bool = true;
-const ALWAYS_CHECK: bool = true;
 const TRANSFERS: bool = true;
 const TRANSFER_METHODS: &[ShardTransferMethod] = &[
     // ShardTransferMethod::StreamRecords,
@@ -34,6 +33,8 @@ const TRANSFER_METHODS: &[ShardTransferMethod] = &[
 const CANCEL_OPTIMIZERS: bool = false;
 const UPDATE_RETRIES: u32 = 5;
 const UPDATE_RETRY_INTERVAL: Duration = Duration::from_millis(50);
+const CHECK_RETRIES: usize = 5;
+const CHECK_RETRY_DELAY: Duration = Duration::from_millis(200);
 
 const COLLECTION_POLL_INTERVAL: Duration = Duration::from_millis(50);
 const COLLECTION_POLL_MAX: Duration = Duration::from_secs(120);
@@ -66,22 +67,8 @@ async fn main() {
 
         sweep_points(&clients, sweep_start).await;
 
-        if ALWAYS_CHECK || round % 10 == 0 || round < 5 {
-            let range = sweep_start..sweep_start + POINT_COUNT;
-            let mut errors = vec![];
-            for (i, client) in clients.iter().enumerate() {
-                println!("Check points {}: expect {range:?}", HOSTS[i]);
-
-                let result = check_points(client, sweep_start).await;
-
-                if let Err(err) = result {
-                    errors.push(format!("- {}: {err}", HOSTS[i]));
-                }
-            }
-
-            if !errors.is_empty() {
-                panic!("\n!!!INCONSISTENCY!!!\n{}\n", errors.join("\n"));
-            }
+        if let Err(err) = check_points(&clients, sweep_start, CHECK_RETRIES).await {
+            panic!("\n!!!INCONSISTENCIES AFTER {CHECK_RETRIES} ATTEMPTS!!!\n{err}\n");
         }
     }
 
@@ -225,7 +212,38 @@ async fn wait_for_transfer_count(client: &Qdrant, count: usize) {
     panic!("Timeout waiting for transfer count");
 }
 
-async fn check_points(client: &Qdrant, sweep_start: u64) -> Result<(), String> {
+async fn check_points(clients: &[Qdrant], sweep_start: u64, attempts: usize) -> Result<(), String> {
+    let range = sweep_start..sweep_start + POINT_COUNT;
+    let mut errors = vec![];
+
+    for retries_left in (0..attempts).rev() {
+        errors.clear();
+
+        for (i, client) in clients.iter().enumerate() {
+            println!("Check points {}: expect {range:?}", HOSTS[i]);
+
+            let result = check_points_on_peer(client, sweep_start).await;
+
+            if let Err(err) = result {
+                errors.push(format!("- {}: {err}", HOSTS[i]));
+            }
+        }
+
+        if errors.is_empty() {
+            return Ok(());
+        }
+
+        println!("Got inconsistencies:\n{}", errors.join("\n"));
+
+        if retries_left > 0 {
+            std::thread::sleep(CHECK_RETRY_DELAY);
+        }
+    }
+
+    Err(errors.join("\n"))
+}
+
+async fn check_points_on_peer(client: &Qdrant, sweep_start: u64) -> Result<(), String> {
     let records = client
         .scroll(
             ScrollPointsBuilder::new(COLLECTION_NAME)
