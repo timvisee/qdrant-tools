@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use chrono::Local;
 use qdrant_client::qdrant::point_id::PointIdOptions;
 use qdrant_client::qdrant::{
     CreateCollectionBuilder, DeletePointsBuilder, OptimizersConfigDiffBuilder, PointStruct,
@@ -25,6 +26,7 @@ const SHUFFLE_POINTS: bool = false;
 const DIM: u64 = 128;
 const PAYLOAD_KEY: &str = "key";
 const WAIT: bool = true;
+const DATETIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.6f";
 const TRANSFERS: bool = true;
 const TRANSFER_METHODS: &[ShardTransferMethod] = &[
     // ShardTransferMethod::StreamRecords,
@@ -233,10 +235,15 @@ async fn check_points(
         for (i, client) in clients.iter().enumerate() {
             println!("Check points {}: expect {range:?}", HOSTS[i]);
 
+            let time = Local::now();
             let result = check_points_on_peer(client, sweep_start).await;
 
             if let Err(err) = result {
-                errors.push(format!("- {}: {err}", HOSTS[i]));
+                errors.push(format!(
+                    "- {} {}: {err}",
+                    time.format(DATETIME_FORMAT),
+                    HOSTS[i],
+                ));
             }
         }
 
