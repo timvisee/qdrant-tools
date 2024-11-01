@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use chrono::Local;
+use chrono::Utc;
 use qdrant_client::qdrant::point_id::PointIdOptions;
 use qdrant_client::qdrant::{
     CreateCollectionBuilder, DeletePointsBuilder, OptimizersConfigDiffBuilder, PointStruct,
@@ -235,7 +235,7 @@ async fn check_points(
         for (i, client) in clients.iter().enumerate() {
             println!("Check points {}: expect {range:?}", HOSTS[i]);
 
-            let time = Local::now();
+            let time = Utc::now();
             let result = check_points_on_peer(client, sweep_start).await;
 
             if let Err(err) = result {
