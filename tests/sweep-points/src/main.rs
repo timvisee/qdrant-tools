@@ -34,9 +34,8 @@ const TRANSFER_METHODS: &[ShardTransferMethod] = &[
 const CANCEL_OPTIMIZERS: bool = false;
 const UPDATE_RETRIES: u32 = 5;
 const UPDATE_RETRY_INTERVAL: Duration = Duration::from_millis(50);
-const CHECK_RETRIES: usize = 5;
-const CHECK_RETRY_DELAY: Duration = Duration::from_millis(200);
-
+const CHECK_RETRIES: usize = 10;
+const CHECK_RETRY_DELAY: Duration = Duration::from_millis(250);
 const COLLECTION_POLL_INTERVAL: Duration = Duration::from_millis(50);
 const COLLECTION_POLL_MAX: Duration = Duration::from_secs(120);
 
