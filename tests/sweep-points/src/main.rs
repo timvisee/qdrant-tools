@@ -19,8 +19,8 @@ const SHARD_COUNT: u32 = 1;
 const SEGMENT_COUNT: u64 = 3;
 const REPLICATION_FACTOR: u32 = HOSTS.len() as u32;
 const WRITE_CONSISTENCY_FACTOR: u32 = 1;
-const BATCH_SIZE: usize = 50;
-const INDEXING_THRESHOLD: u64 = 0;
+const BATCH_SIZE: usize = 25;
+const INDEXING_THRESHOLD: u64 = 1;
 const POINT_COUNT: u64 = 200;
 const SHUFFLE_POINTS: bool = false;
 const DIM: u64 = 128;
@@ -29,15 +29,15 @@ const WAIT: bool = true;
 const DATETIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.6f";
 const TRANSFERS: bool = true;
 const TRANSFER_METHODS: &[ShardTransferMethod] = &[
-    // ShardTransferMethod::StreamRecords,
+    ShardTransferMethod::StreamRecords,
     // ShardTransferMethod::Snapshot,
     ShardTransferMethod::WalDelta,
 ];
 const CANCEL_OPTIMIZERS: bool = false;
 const UPDATE_RETRIES: u32 = 100;
 const UPDATE_RETRY_INTERVAL: Duration = Duration::from_millis(50);
-const CHECK_RETRIES: usize = 10;
-const CHECK_RETRY_DELAY: Duration = Duration::from_millis(250);
+const CHECK_RETRIES: usize = 25;
+const CHECK_RETRY_DELAY: Duration = Duration::from_millis(100);
 const COLLECTION_POLL_INTERVAL: Duration = Duration::from_millis(50);
 const COLLECTION_POLL_MAX: Duration = Duration::from_secs(120);
 
