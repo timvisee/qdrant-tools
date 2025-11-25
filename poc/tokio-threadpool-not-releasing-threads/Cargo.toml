@@ -1,0 +1,7 @@
+[package]
+name = "tokio-threadpool-not-releasing-threads"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { version = "1.48", features = ["full"] }
