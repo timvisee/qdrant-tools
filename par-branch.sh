@@ -40,7 +40,7 @@ if [[ -d "$ORIGINAL_DIR/target" ]]; then
 fi
 
 cd "$ORIGINAL_DIR/$WORKTREE_DIR"
-claude || true
+tmux new -s "$WORKTREE_DIR" || true
 
 cd "$ORIGINAL_DIR"
 read -r -p "Clean up worktree $WORKTREE_DIR? [y/N] " REPLY
