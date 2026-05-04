@@ -38,6 +38,9 @@ echo "Created worktree '$WORKTREE_DIR' for branch '$BRANCH'"
 if [[ -d "$ORIGINAL_DIR/target" ]]; then
     ln -s "$ORIGINAL_DIR/target" "$ORIGINAL_DIR/$WORKTREE_DIR/target"
 fi
+if [[ -d "$ORIGINAL_DIR/.claude" ]]; then
+    ln -s "$ORIGINAL_DIR/.claude" "$ORIGINAL_DIR/$WORKTREE_DIR/.claude"
+fi
 
 cd "$ORIGINAL_DIR/$WORKTREE_DIR"
 tmux new -s "$WORKTREE_DIR" || true
