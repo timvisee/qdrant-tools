@@ -48,6 +48,10 @@ tmux new -s "$WORKTREE_DIR" || true
 cd "$ORIGINAL_DIR"
 read -r -p "Clean up worktree $WORKTREE_DIR? [y/N] " REPLY
 if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+    if [[ -d "$ORIGINAL_DIR/$WORKTREE_DIR/.claude" ]]; then
+        unlink "$ORIGINAL_DIR/$WORKTREE_DIR/.claude"
+    fi
+
     git worktree remove "$WORKTREE_DIR"
     echo "Worktree '$WORKTREE_DIR' removed, branch '$BRANCH' still exists"
 else
